@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>טיימר אימון מקצועי</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .timer-circle {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .phase-work { color: #22c55e; border-color: #22c55e; }
+        .phase-rest { color: #ef4444; border-color: #ef4444; }
+        .phase-prepare { color: #eab308; border-color: #eab308; }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.1s linear;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container max-w-md mx-auto p-4 h-full flex flex-col justify-center">
+        <!-- Main Display -->
+        <div id="setup-screen" class="glass-panel p-8 rounded-3xl shadow-2xl space-y-6">
+            <h1 class="text-3xl font-bold text-center mb-8">הגדרת אימון</h1>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <div class="flex flex-col">
+                    <label class="text-sm text-slate-400 mb-1 mr-2">זמן עבודה (שניות)</label>
+                    <div class="flex items-center bg-slate-800 rounded-xl p-2 border border-slate-700">
+                        <button onclick="changeVal('work', -5)" class="p-2 hover:bg-slate-700 rounded-lg"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="work-time" value="30" class="bg-transparent text-center w-full text-xl font-bold focus:outline-none">
+                        <button onclick="changeVal('work', 5)" class="p-2 hover:bg-slate-700 rounded-lg"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-sm text-slate-400 mb-1 mr-2">זמן מנוחה (שניות)</label>
+                    <div class="flex items-center bg-slate-800 rounded-xl p-2 border border-slate-700">
+                        <button onclick="changeVal('rest', -5)" class="p-2 hover:bg-slate-700 rounded-lg"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="rest-time" value="10" class="bg-transparent text-center w-full text-xl font-bold focus:outline-none">
+                        <button onclick="changeVal('rest', 5)" class="p-2 hover:bg-slate-700 rounded-lg"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-sm text-slate-400 mb-1 mr-2">מספר סבבים</label>
+                    <div class="flex items-center bg-slate-800 rounded-xl p-2 border border-slate-700">
+                        <button onclick="changeVal('rounds', -1)" class="p-2 hover:bg-slate-700 rounded-lg"><i class="fas fa-minus"></i></button>
+                        <input type="number" id="rounds-count" value="8" class="bg-transparent text-center w-full text-xl font-bold focus:outline-none">
+                        <button onclick="changeVal('rounds', 1)" class="p-2 hover:bg-slate-700 rounded-lg"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="start-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-xl mt-4">
+                התחל אימון
+            </button>
+        </div>
+
+        <!-- Timer Screen (Hidden by default) -->
+        <div id="timer-screen" class="hidden glass-panel p-8 rounded-3xl shadow-2xl text-center space-y-8">
+            <div id="phase-indicator" class="text-2xl font-bold tracking-widest uppercase">הכנה</div>
+            
+            <div class="relative inline-flex items-center justify-center">
+                <svg class="w-64 h-64">
+                    <circle class="text-slate-700" stroke-width="8" stroke="currentColor" fill="transparent" r="120" cx="128" cy="128" />
+                    <circle id="progress-circle" class="progress-ring__circle" stroke-width="8" stroke-linecap="round" stroke="currentColor" fill="transparent" r="120" cx="128" cy="128" />
+                </svg>
+                <div id="time-display" class="absolute text-7xl font-black tabular-nums">05</div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="text-slate-400 text-lg">סבב</div>
+                <div id="rounds-display" class="text-3xl font-bold">1 / 8</div>
+            </div>
+
+            <div class="flex gap-4">
+                <button id="pause-btn" class="flex-1 bg-slate-700 hover:bg-slate-600 p-4 rounded-2xl text-xl transition-all">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button id="reset-btn" class="flex-1 bg-red-600/20 hover:bg-red-600/40 text-red-500 p-4 rounded-2xl text-xl transition-all">
+                    <i class="fas fa-stop"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Beep -->
+    <audio id="beep-low" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+    <audio id="beep-high" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+
+    <script>
+        // State Management
+        let workDuration, restDuration, totalRounds;
+        let currentRound = 1;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let isPaused = false;
+        let currentPhase = 'prepare'; // 'prepare', 'work', 'rest'
+
+        const setupScreen = document.getElementById('setup-screen');
+        const timerScreen = document.getElementById('timer-screen');
+        const timeDisplay = document.getElementById('time-display');
+        const phaseIndicator = document.getElementById('phase-indicator');
+        const roundsDisplay = document.getElementById('rounds-display');
+        const progressCircle = document.getElementById('progress-circle');
+        const pauseBtn = document.getElementById('pause-btn');
+        
+        const circumference = 2 * Math.PI * 120;
+        progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+
+        function changeVal(id, delta) {
+            const el = document.getElementById(`${id}-${id === 'rounds' ? 'count' : 'time'}`);
+            let val = parseInt(el.value) + delta;
+            if (val < 1) val = 1;
+            el.value = val;
+        }
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100 * circumference);
+            progressCircle.style.strokeDashoffset = offset;
+        }
+
+        function playSound(type) {
+            const id = type === 'high' ? 'beep-high' : 'beep-low';
+            const sound = document.getElementById(id);
+            sound.currentTime = 0;
+            sound.play().catch(() => {}); // Prevent errors if user hasn't interacted
+        }
+
+        function updateDisplay() {
+            timeDisplay.innerText = timeLeft.toString().padStart(2, '0');
+            roundsDisplay.innerText = `${currentRound} / ${totalRounds}`;
+            
+            let phaseText = '';
+            let phaseColor = '';
+            let totalTimeInPhase = 0;
+
+            if (currentPhase === 'prepare') {
+                phaseText = 'התכוננו!';
+                phaseColor = '#eab308';
+                totalTimeInPhase = 5;
+            } else if (currentPhase === 'work') {
+                phaseText = 'עבודה!';
+                phaseColor = '#22c55e';
+                totalTimeInPhase = workDuration;
+            } else {
+                phaseText = 'מנוחה';
+                phaseColor = '#ef4444';
+                totalTimeInPhase = restDuration;
+            }
+
+            phaseIndicator.innerText = phaseText;
+            phaseIndicator.style.color = phaseColor;
+            progressCircle.style.color = phaseColor;
+            
+            const percent = (timeLeft / totalTimeInPhase) * 100;
+            setProgress(percent);
+        }
+
+        function startTimer() {
+            workDuration = parseInt(document.getElementById('work-time').value);
+            restDuration = parseInt(document.getElementById('rest-time').value);
+            totalRounds = parseInt(document.getElementById('rounds-count').value);
+            
+            currentRound = 1;
+            currentPhase = 'prepare';
+            timeLeft = 5;
+
+            setupScreen.classList.add('hidden');
+            timerScreen.classList.remove('hidden');
+            
+            runCycle();
+        }
+
+        function runCycle() {
+            updateDisplay();
+            
+            timerInterval = setInterval(() => {
+                if (isPaused) return;
+
+                timeLeft--;
+
+                if (timeLeft <= 3 && timeLeft > 0) {
+                    playSound('low');
+                }
+
+                if (timeLeft < 0) {
+                    playSound('high');
+                    nextPhase();
+                } else {
+                    updateDisplay();
+                }
+            }, 1000);
+        }
+
+        function nextPhase() {
+            if (currentPhase === 'prepare') {
+                currentPhase = 'work';
+                timeLeft = workDuration;
+            } else if (currentPhase === 'work') {
+                if (currentRound >= totalRounds) {
+                    finishWorkout();
+                    return;
+                }
+                currentPhase = 'rest';
+                timeLeft = restDuration;
+            } else if (currentPhase === 'rest') {
+                currentPhase = 'work';
+                currentRound++;
+                timeLeft = workDuration;
+            }
+            updateDisplay();
+        }
+
+        function finishWorkout() {
+            clearInterval(timerInterval);
+            phaseIndicator.innerText = "אימון הושלם!";
+            phaseIndicator.style.color = "#3b82f6";
+            timeDisplay.innerText = "🏁";
+            setProgress(100);
+            setTimeout(() => {
+                resetWorkout();
+            }, 5000);
+        }
+
+        function resetWorkout() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isPaused = false;
+            setupScreen.classList.remove('hidden');
+            timerScreen.classList.add('hidden');
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseBtn.innerHTML = isPaused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+        }
+
+        // Event Listeners
+        document.getElementById('start-btn').addEventListener('click', startTimer);
+        document.getElementById('reset-btn').addEventListener('click', resetWorkout);
+        pauseBtn.addEventListener('click', togglePause);
+
+    </script>
+</body>
+</html>
